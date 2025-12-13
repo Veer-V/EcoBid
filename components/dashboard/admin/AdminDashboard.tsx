@@ -6,7 +6,7 @@ import { AuditService, AuditLogEntry } from '../../../utils/audit';
 import { AuthService } from '../../../utils/auth';
 import { UserService } from '../../../utils/userService';
 import AddAuction from './AddAuction';
-import { Search, Download, Filter, Power, Eye, Shield, MapPin, ChevronDown, X, CheckSquare, UserCheck, UserX, Menu, Calendar, Trash2, Mail, Phone, ChevronUp, Check, FileText, ChevronLeft, ChevronRight, AlertTriangle, Info, Plus, Gavel, Clock } from 'lucide-react';
+import { Search, Download, Filter, Power, Eye, Shield, MapPin, ChevronDown, X, CheckSquare, UserCheck, UserX, Menu, Calendar, Trash2, Mail, Phone, ChevronUp, Check, FileText, ChevronLeft, ChevronRight, AlertTriangle, Info, Plus, Gavel, Clock, Pencil } from 'lucide-react';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -31,6 +31,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   
   // View User Details State
   const [viewUser, setViewUser] = useState<any | null>(null);
+
+  // Auction Edit State
+  const [auctionToEdit, setAuctionToEdit] = useState<any | null>(null);
   
   // Bulk Action State
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -117,6 +120,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           }
           setActioningUser(null);
       }, 600);
+  };
+
+  // Auction Deletion
+  const handleDeleteAuction = (auction: any) => {
+      setConfirmModal({
+        isOpen: true,
+        title: 'Delete Auction',
+        message: `Are you sure you want to delete the auction "${auction.title}"? This action cannot be undone.`,
+        confirmLabel: 'Delete Auction',
+        isDangerous: true,
+        onConfirm: () => executeAuctionDelete(auction)
+      });
+  };
+
+  const executeAuctionDelete = (auction: any) => {
+      setConfirmModal(prev => ({...prev, isOpen: false}));
+      
+      const success = UserService.removeAuction(auction.id);
+      if (success) {
+          setAuctionsList(prev => prev.filter(a => a.id !== auction.id));
+          AuditService.logAction({
+            adminName: 'Super Admin',
+            action: 'Delete Auction',
+            target: `Auction: ${auction.title}`,
+            details: `Deleted auction ID #${auction.id}`,
+            status: 'Success'
+          });
+      }
+  };
+
+  // Auction Edit
+  const handleEditAuction = (auction: any) => {
+      setAuctionToEdit(auction);
+      setCurrentView('add-auction');
   };
 
   const clearFilters = () => {
@@ -241,7 +278,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <div className="h-full flex flex-col">
             <AdminSidebar 
                 currentView={currentView === 'add-auction' ? 'auctions' : currentView} 
-                onNavigate={setCurrentView} 
+                onNavigate={(view) => { 
+                    setCurrentView(view); 
+                    if(view !== 'add-auction') setAuctionToEdit(null); // Reset edit state if navigating away
+                }} 
                 onLogout={onLogout} 
             />
           </div>
@@ -269,7 +309,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <h2 className="text-xl font-bold text-slate-800 capitalize truncate">
                 {currentView === 'audit' ? 'Audit Trail' : 
                 currentView === 'users' ? 'User Management' :
-                currentView === 'add-auction' ? 'Create Auction' :
+                currentView === 'add-auction' ? (auctionToEdit ? 'Edit Auction' : 'Create Auction') :
                 `${currentView} Overview`}
               </h2>
           </div>
@@ -336,7 +376,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           )}
           
           {currentView === 'add-auction' && (
-             <AddAuction onBack={() => setCurrentView('auctions')} />
+             <AddAuction 
+                onBack={() => {
+                    setAuctionToEdit(null);
+                    setCurrentView('auctions');
+                }} 
+                editData={auctionToEdit}
+             />
           )}
 
           {currentView === 'auctions' && (
@@ -347,7 +393,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <p className="text-sm text-gray-500">Create, edit and manage waste auctions.</p>
                     </div>
                     <button 
-                        onClick={() => setCurrentView('add-auction')}
+                        onClick={() => {
+                            setAuctionToEdit(null);
+                            setCurrentView('add-auction');
+                        }}
                         className="flex items-center gap-2 px-4 py-2.5 bg-eco-green text-white rounded-lg font-bold shadow-lg shadow-eco-green/30 hover:bg-eco-darkGreen transition-all active:scale-95"
                     >
                         <Plus size={20} />
@@ -372,7 +421,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                     <tr key={auction.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${auction.image || 'from-gray-400 to-gray-500'} flex-shrink-0`}></div>
+                                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${auction.image && !auction.image.startsWith('http') && !auction.image.startsWith('data:') ? auction.image : 'from-gray-400 to-gray-500'} flex-shrink-0 relative overflow-hidden`}>
+                                                    {auction.image && (auction.image.startsWith('http') || auction.image.startsWith('data:')) && (
+                                                        <img src={auction.image} alt="" className="w-full h-full object-cover" />
+                                                    )}
+                                                </div>
                                                 <div>
                                                     <p className="font-bold text-gray-900 text-sm">{auction.title}</p>
                                                     <p className="text-xs text-gray-500">{auction.location} • ID: #{auction.id}</p>
@@ -394,9 +447,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-gray-400 hover:text-blue-600 p-2">
-                                                <Eye size={18} />
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button 
+                                                    onClick={() => handleEditAuction(auction)}
+                                                    className="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                                                    title="Edit Details"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteAuction(auction)}
+                                                    className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                    title="Delete Auction"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

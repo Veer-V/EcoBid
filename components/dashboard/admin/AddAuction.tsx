@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, Check, AlertCircle } from 'lucide-react';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
@@ -7,9 +7,10 @@ import { AuditService } from '../../../utils/audit';
 
 interface AddAuctionProps {
   onBack: () => void;
+  editData?: any;
 }
 
-const AddAuction: React.FC<AddAuctionProps> = ({ onBack }) => {
+const AddAuction: React.FC<AddAuctionProps> = ({ onBack, editData }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -23,6 +24,25 @@ const AddAuction: React.FC<AddAuctionProps> = ({ onBack }) => {
     basePrice: '',
     reservePrice: ''
   });
+
+  useEffect(() => {
+    if (editData) {
+        setFormData({
+            title: editData.title || '',
+            description: editData.description || '',
+            category: editData.category || 'Metal',
+            location: editData.location || '',
+            quantity: editData.quantity || '',
+            basePrice: editData.basePrice?.toString() || '',
+            reservePrice: editData.reservePrice?.toString() || ''
+        });
+        
+        // Check if image is a URL (not a gradient string)
+        if (editData.image && !editData.image.startsWith('from-')) {
+            setImagePreview(editData.image);
+        }
+    }
+  }, [editData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,19 +80,29 @@ const AddAuction: React.FC<AddAuctionProps> = ({ onBack }) => {
                 imagePreview: imagePreview // In a real app, this would be an uploaded URL
             };
 
-            UserService.addAuction(auctionData);
-            
-            AuditService.logAction({
-                adminName: 'Super Admin',
-                action: 'Create Auction',
-                target: `Auction: ${formData.title}`,
-                details: `Created new auction in ${formData.category}`,
-                status: 'Success'
-            });
+            if (editData) {
+                UserService.updateAuction(editData.id, auctionData);
+                AuditService.logAction({
+                    adminName: 'Super Admin',
+                    action: 'Update Auction',
+                    target: `Auction: ${formData.title}`,
+                    details: `Updated details for auction ID #${editData.id}`,
+                    status: 'Success'
+                });
+            } else {
+                UserService.addAuction(auctionData);
+                AuditService.logAction({
+                    adminName: 'Super Admin',
+                    action: 'Create Auction',
+                    target: `Auction: ${formData.title}`,
+                    details: `Created new auction in ${formData.category}`,
+                    status: 'Success'
+                });
+            }
 
             onBack();
         } catch (err) {
-            setError('Failed to create auction. Please try again.');
+            setError('Failed to save auction. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -89,8 +119,10 @@ const AddAuction: React.FC<AddAuctionProps> = ({ onBack }) => {
                 <ArrowLeft size={20} />
             </button>
             <div>
-                <h2 className="text-xl font-bold text-gray-900">Create New Auction</h2>
-                <p className="text-sm text-gray-500">Fill in the details to publish a new auction listing.</p>
+                <h2 className="text-xl font-bold text-gray-900">{editData ? 'Edit Auction' : 'Create New Auction'}</h2>
+                <p className="text-sm text-gray-500">
+                    {editData ? 'Update the details for this auction listing.' : 'Fill in the details to publish a new auction listing.'}
+                </p>
             </div>
         </div>
 
@@ -237,7 +269,7 @@ const AddAuction: React.FC<AddAuctionProps> = ({ onBack }) => {
                     isLoading={isLoading}
                     className="w-auto px-8"
                 >
-                    Publish Auction
+                    {editData ? 'Update Auction' : 'Publish Auction'}
                 </Button>
             </div>
         </form>

@@ -60,10 +60,37 @@ export const UserService = {
       ...auctionData,
       currentBid: auctionData.basePrice,
       endsIn: 1440, // Default 24 hours in minutes
-      image: 'from-indigo-400 to-purple-500' // Default gradient
+      // Use provided imagePreview as image, or fallback to default gradient
+      image: auctionData.imagePreview || 'from-indigo-400 to-purple-500'
     };
     appState.auctions.unshift(newAuction);
     return newAuction;
+  },
+
+  updateAuction: (id: number, updatedData: any) => {
+    const index = appState.auctions.findIndex(a => a.id === id);
+    if (index !== -1) {
+      // Preserve existing fields like currentBid if not explicitly updated
+      // If imagePreview is provided in updatedData, map it to image
+      const image = updatedData.imagePreview || appState.auctions[index].image;
+      
+      appState.auctions[index] = { 
+        ...appState.auctions[index], 
+        ...updatedData,
+        image
+      };
+      return true;
+    }
+    return false;
+  },
+
+  removeAuction: (id: number) => {
+    const index = appState.auctions.findIndex(a => a.id === id);
+    if (index !== -1) {
+      appState.auctions.splice(index, 1);
+      return true;
+    }
+    return false;
   },
 
   getBids: () => {
