@@ -921,8 +921,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         
         {/* User Details Modal */}
         {viewUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in"
+            onClick={() => setViewUser(null)}
+          >
+            <div 
+                className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in-up"
+                onClick={(e) => e.stopPropagation()}
+            >
                {/* Header Background */}
                <div className="relative h-32 bg-gradient-to-r from-blue-600 to-purple-600">
                   <button onClick={() => setViewUser(null)} className="absolute top-4 right-4 p-2 bg-black/20 text-white rounded-full hover:bg-black/40 transition-colors">

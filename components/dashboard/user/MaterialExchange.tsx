@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Tag, X, CheckCircle2, Image as ImageIcon, Search, Filter } from 'lucide-react';
+import { ShoppingBag, Plus, Tag, X, CheckCircle2, Image as ImageIcon, Search, Filter, CreditCard, ShoppingCart } from 'lucide-react';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 
@@ -61,6 +61,7 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [cartCount, setCartCount] = useState(0);
   
   // Sell Form State
   const [sellForm, setSellForm] = useState({
@@ -97,7 +98,13 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
   };
 
   const handleAddToCart = () => {
+    setCartCount(prev => prev + 1);
     showToast('success', 'Item added to cart!');
+    setSelectedProduct(null);
+  };
+
+  const handleBuyNow = () => {
+    showToast('success', 'Purchase successful! Order #' + Math.floor(Math.random() * 10000));
     setSelectedProduct(null);
   };
 
@@ -111,13 +118,20 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
       
       {/* Header & Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Material Exchange</h2>
-          <p className="text-gray-500 text-sm">Buy and sell recyclable materials directly.</p>
+        <div className="flex items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Material Exchange</h2>
+              <p className="text-gray-500 text-sm">Buy and sell recyclable materials directly.</p>
+            </div>
+            {cartCount > 0 && (
+                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-eco-green/10 text-eco-green rounded-full animate-fade-in">
+                    <ShoppingCart size={18} />
+                    <span className="font-bold text-sm">{cartCount} items</span>
+                 </div>
+             )}
         </div>
 
         <div className="bg-gray-100 p-1.5 rounded-xl flex items-center relative">
-          {/* Sliding Background (Visual only, implemented via conditional classes below for simplicity) */}
           <button
             onClick={() => setMode('buy')}
             className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
@@ -267,8 +281,14 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
 
       {/* Product Detail Modal */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+            onClick={() => setSelectedProduct(null)}
+        >
+            <div 
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className={`h-48 w-full relative ${selectedProduct.isGradient ? `bg-gradient-to-br ${selectedProduct.image}` : 'bg-gray-100'}`}>
                      {!selectedProduct.isGradient && selectedProduct.image && (
                         <img src={selectedProduct.image} alt={selectedProduct.title} className="w-full h-full object-cover" />
@@ -295,13 +315,13 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
                         <p className="text-gray-700 leading-relaxed text-sm">{selectedProduct.description}</p>
                     </div>
 
-                    <div className="flex gap-4">
-                        <Button onClick={handleAddToCart} className="flex-1 gap-2">
+                    <div className="flex gap-3">
+                        <Button onClick={handleAddToCart} variant="outline" className="flex-1 gap-2">
                             <ShoppingBag size={18} /> Add to Cart
                         </Button>
-                        <button className="px-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                            <ImageIcon size={20} className="text-gray-500" />
-                        </button>
+                        <Button onClick={handleBuyNow} className="flex-1 gap-2">
+                            <CreditCard size={18} /> Buy Now
+                        </Button>
                     </div>
                 </div>
             </div>
