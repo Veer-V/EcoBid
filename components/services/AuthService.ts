@@ -20,6 +20,7 @@ export const AuthService = {
             return { success: false, error: error.message };
         }
 
+        // Profile creation is handled by Database Trigger (handle_new_user)
         return { success: true, user: data.user };
     },
 
@@ -33,15 +34,8 @@ export const AuthService = {
             return { success: false, error: error.message };
         }
 
-        const user: User = {
-            id: data.user.id,
-            email: data.user.email || '',
-            fullName: data.user.user_metadata?.full_name,
-            role: data.user.user_metadata?.role || 'user',
-            createdAt: data.user.created_at
-        };
-
-        return { success: true, user, role: user.role };
+        const user = await this.getCurrentUser();
+        return { success: true, user, role: user?.role };
     },
 
     async logout() {
@@ -53,33 +47,42 @@ export const AuthService = {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return null;
 
+        // Fetch extended profile data
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
         const user: User = {
             id: session.user.id,
             email: session.user.email || '',
-            fullName: session.user.user_metadata?.full_name,
-            role: session.user.user_metadata?.role || 'user',
-            createdAt: session.user.created_at
+            fullName: profile?.full_name || session.user.user_metadata?.full_name,
+            role: profile?.role || session.user.user_metadata?.role || 'user',
+            createdAt: session.user.created_at,
+            // Extended fields
+            company: profile?.company,
+            phone: profile?.phone,
+            address: profile?.address,
+            walletBalance: parseFloat(profile?.wallet_balance || 0),
+            emdBlocked: parseFloat(profile?.emd_blocked || 0)
         };
         return user;
     },
 
-    // Admin only: Get all users (This uses a specific table 'profiles' if it existed, but we'll try to list users securely if possible
-    // NOTE: client-side listUsers() is usually restricted. 
-    // For this demo, since we don't have a backend to proxy this, we might rely on a public 'profiles' table or similar.
-    // I will assume there is a 'users_public' view or table for this, otherwise I'll return mock data for Admin Dashboard to prevent crash.
     async getUsers() {
-        // Try to fetch from a hypothetic public profiles table
+        // Admin only: Get all profiles
         const { data, error } = await supabase.from('profiles').select('*');
-        if (error || !data) {
-            console.warn("Could not fetch real users (table might be missing), using local state/empty");
+        if (error) {
+            console.error("Error fetching users:", error);
             return [];
         }
         return data;
     },
 
     async updateUserStatus(email: string, status: 'active' | 'disabled') {
-        // This requires admin privileges / edge function in a real app
-        console.log(`Mocking status update for ${email} to ${status}`);
+        // Ideally update a status column in profiles, if meant for logic
+        console.log("Update user status not fully implemented in schema yet");
         return true;
     }
 };

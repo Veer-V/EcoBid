@@ -34,8 +34,12 @@ export const AuctionService = {
     },
 
     async createAuction(auctionData: Partial<Auction>) {
-        const user = await supabase.auth.getUser();
-        if (!user.data.user) throw new Error("Not authenticated");
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
+
+        // Make sure we have a profile
+        const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).single();
+        if (!profile) throw new Error("User profile not found. Please log in again.");
 
         const { data, error } = await supabase
             .from('auctions')
@@ -48,9 +52,9 @@ export const AuctionService = {
                 location: auctionData.location || 'Unknown',
                 quantity: auctionData.quantity || '1 Lot',
                 image_url: auctionData.image,
-                seller_id: user.data.user.id,
+                seller_id: user.id,
                 status: 'active',
-                ends_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Default 24h for demo
+                ends_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Default 24h
             })
             .select()
             .single();
@@ -59,37 +63,12 @@ export const AuctionService = {
         return data;
     },
 
-    async placeBid(auctionId: number, amount: number) {
-        const user = await supabase.auth.getUser();
-        if (!user.data.user) throw new Error("Login required");
-
-        // Check if bid is higher (concurrency check ideally needed)
-        const { data: auction, error: fetchError } = await supabase
-            .from('auctions')
-            .select('current_bid')
-            .eq('id', auctionId)
-            .single();
-
-        if (fetchError) throw fetchError;
-        if (auction.current_bid >= amount) throw new Error("Bid must be higher than current bid");
-
-        // Update auction
-        const { error: updateError } = await supabase
-            .from('auctions')
-            .update({ current_bid: amount })
-            .eq('id', auctionId);
-
-        if (updateError) throw updateError;
-
-        // Log bid (optional)
-        await supabase.from('bids').insert({
-            auction_id: auctionId,
-            bidder_id: user.data.user.id,
-            amount: amount
-        });
-
-        return true;
-    },
+    // Note: placeBid is now handled transactionally in UserService to manage EMD/Wallet, 
+    // but we can keep a simple version here or redirect to UserService if needed.
+    // For now, removing the standalone placeBid here to avoid duplication/inconsistency
+    // or keeping it as a wrapper if specific components call it. 
+    // Ideally, we consolidate. Let's redirect to UserService logic or keep simple update if EMD not needed for all.
+    // Given the requirements, I'll remove it to force usage of the robust UserService.placeBid
 
     async removeAuction(id: number) {
         const { error } = await supabase.from('auctions').delete().eq('id', id);
@@ -115,4 +94,3 @@ export const AuctionService = {
         return data;
     }
 };
-
