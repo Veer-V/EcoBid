@@ -4,7 +4,9 @@ import AdminSidebar from './AdminSidebar';
 import Logo from '../../Logo';
 import { AuditService, AuditLogEntry } from '../../../utils/audit';
 import { AuthService } from '../../../utils/auth';
-import { Search, Download, Filter, Power, Eye, Shield, MapPin, ChevronDown, X, CheckSquare, UserCheck, UserX, Menu, Calendar, Trash2, Mail, Phone, ChevronUp, Check, FileText, ChevronLeft, ChevronRight, AlertTriangle, Info } from 'lucide-react';
+import { UserService } from '../../../utils/userService';
+import AddAuction from './AddAuction';
+import { Search, Download, Filter, Power, Eye, Shield, MapPin, ChevronDown, X, CheckSquare, UserCheck, UserX, Menu, Calendar, Trash2, Mail, Phone, ChevronUp, Check, FileText, ChevronLeft, ChevronRight, AlertTriangle, Info, Plus, Gavel, Clock } from 'lucide-react';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -14,6 +16,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState<AdminView>('dashboard');
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [auctionsList, setAuctionsList] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Pagination State
@@ -56,6 +59,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   useEffect(() => {
     // Always fetch users for stats
     setUsersList(AuthService.getUsers());
+    setAuctionsList(UserService.getAuctions());
     
     if (currentView === 'audit') {
       setAuditLogs(AuditService.getLogs());
@@ -236,7 +240,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       `}>
           <div className="h-full flex flex-col">
             <AdminSidebar 
-                currentView={currentView} 
+                currentView={currentView === 'add-auction' ? 'auctions' : currentView} 
                 onNavigate={setCurrentView} 
                 onLogout={onLogout} 
             />
@@ -265,6 +269,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <h2 className="text-xl font-bold text-slate-800 capitalize truncate">
                 {currentView === 'audit' ? 'Audit Trail' : 
                 currentView === 'users' ? 'User Management' :
+                currentView === 'add-auction' ? 'Create Auction' :
                 `${currentView} Overview`}
               </h2>
           </div>
@@ -290,7 +295,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               {/* KPI Cards - Now Dynamic */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                 <KpiCard label="Total Users" value={usersList.length.toString()} change="Real-time" color="bg-blue-500" />
-                <KpiCard label="Active Auctions" value="0" change="Inactive" color="bg-eco-green" />
+                <KpiCard label="Active Auctions" value={auctionsList.length.toString()} change="Active" color="bg-eco-green" />
                 <KpiCard label="Pending Approvals" value="0" change="All cleared" color="bg-orange-500" />
                 <KpiCard label="Total Revenue" value="₹ 0" change="No data" color="bg-purple-600" />
               </div>
@@ -328,6 +333,85 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
             </>
+          )}
+          
+          {currentView === 'add-auction' && (
+             <AddAuction onBack={() => setCurrentView('auctions')} />
+          )}
+
+          {currentView === 'auctions' && (
+             <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <div>
+                        <h3 className="font-bold text-gray-900 text-lg">Auction Management</h3>
+                        <p className="text-sm text-gray-500">Create, edit and manage waste auctions.</p>
+                    </div>
+                    <button 
+                        onClick={() => setCurrentView('add-auction')}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-eco-green text-white rounded-lg font-bold shadow-lg shadow-eco-green/30 hover:bg-eco-darkGreen transition-all active:scale-95"
+                    >
+                        <Plus size={20} />
+                        Create New Auction
+                    </button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+                                <tr>
+                                    <th className="px-6 py-4">Auction Title</th>
+                                    <th className="px-6 py-4">Category</th>
+                                    <th className="px-6 py-4">Current Bid</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {auctionsList.map(auction => (
+                                    <tr key={auction.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${auction.image || 'from-gray-400 to-gray-500'} flex-shrink-0`}></div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900 text-sm">{auction.title}</p>
+                                                    <p className="text-xs text-gray-500">{auction.location} • ID: #{auction.id}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-bold border border-gray-200">
+                                                {auction.category}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 font-mono font-medium text-gray-700">
+                                            ₹{auction.currentBid.toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="flex items-center gap-1.5 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full w-fit">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                                Live
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button className="text-gray-400 hover:text-blue-600 p-2">
+                                                <Eye size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {auctionsList.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="text-center py-12 text-gray-400">
+                                            No active auctions found. Create one to get started.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+             </div>
           )}
 
           {currentView === 'users' && (
@@ -452,6 +536,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                         <input 
                                             type="date"
                                             value={activeFilters.startDate}
+                                            max={activeFilters.endDate}
                                             onChange={(e) => setActiveFilters({...activeFilters, startDate: e.target.value})}
                                             className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-gray-700 font-medium shadow-sm"
                                         />
@@ -461,6 +546,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                         <input 
                                             type="date"
                                             value={activeFilters.endDate}
+                                            min={activeFilters.startDate}
                                             onChange={(e) => setActiveFilters({...activeFilters, endDate: e.target.value})}
                                             className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-gray-700 font-medium shadow-sm"
                                         />
@@ -493,7 +579,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                     )}
                                      {(activeFilters.startDate || activeFilters.endDate) && (
                                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-100">
-                                            Date Range
+                                            {activeFilters.startDate || 'Start'} - {activeFilters.endDate || 'Today'}
                                             <button onClick={() => setActiveFilters({...activeFilters, startDate: '', endDate: ''})} className="ml-2 hover:text-orange-900 rounded-full hover:bg-orange-100 p-0.5">
                                                 <X size={12} />
                                             </button>
@@ -821,7 +907,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           )}
           
           {/* Placeholder for other views */}
-          {currentView !== 'dashboard' && currentView !== 'audit' && currentView !== 'users' && (
+          {currentView !== 'dashboard' && currentView !== 'audit' && currentView !== 'users' && currentView !== 'auctions' && currentView !== 'add-auction' && (
              <div className="flex flex-col items-center justify-center h-[50vh] text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl m-4">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                    <Logo variant="dark" showTagline={false} className="scale-50 opacity-50" />

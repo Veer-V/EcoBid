@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Gavel, Wallet, Settings as SettingsIcon, Bell, LogOut, 
-  Menu, X, Plus, AlertCircle, CheckCircle2, Info
+  Menu, X, Plus, AlertCircle, CheckCircle2, Info, ShoppingBag
 } from 'lucide-react';
 import Logo from '../../Logo';
 import { UserService } from '../../../utils/userService';
@@ -12,8 +12,9 @@ import LiveAuctions from './LiveAuctions';
 import MyBids from './MyBids';
 import UserWallet from './Wallet';
 import UserSettings from './Settings';
+import MaterialExchange from './MaterialExchange';
 
-type ViewState = 'dashboard' | 'my-bids' | 'auctions' | 'wallet' | 'settings';
+type ViewState = 'dashboard' | 'my-bids' | 'auctions' | 'wallet' | 'settings' | 'exchange';
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -100,6 +101,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
           <NavItem icon={LayoutDashboard} label="Dashboard" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setSidebarOpen(false); }} />
           <NavItem icon={Gavel} label="My Bids" badge={bids.filter(b => b.status === 'Leading').length.toString()} active={currentView === 'my-bids'} onClick={() => { setCurrentView('my-bids'); setSidebarOpen(false); }} />
           <NavItem icon={SettingsIcon} label="Live Auctions" active={currentView === 'auctions'} onClick={() => { setCurrentView('auctions'); setSidebarOpen(false); }} />
+          <NavItem icon={ShoppingBag} label="Material Exchange" active={currentView === 'exchange'} onClick={() => { setCurrentView('exchange'); setSidebarOpen(false); }} />
           <NavItem icon={Wallet} label="Wallet & EMD" active={currentView === 'wallet'} onClick={() => { setCurrentView('wallet'); setSidebarOpen(false); }} />
           <NavItem icon={SettingsIcon} label="Settings" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setSidebarOpen(false); }} />
         </nav>
@@ -237,6 +239,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
                     />
                 )}
 
+                {currentView === 'exchange' && (
+                    <MaterialExchange showToast={showToast} />
+                )}
+
                 {currentView === 'my-bids' && (
                     <MyBids 
                         bids={bids} 
@@ -264,8 +270,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
             </div>
         </main>
       </div>
-
-      {/* Shared Modals if needed outside of specific views (currently Wallet handles AddMoney and Auctions handles Bid) */}
     </div>
   );
 };

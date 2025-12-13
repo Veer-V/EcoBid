@@ -1,8 +1,8 @@
 import React from 'react';
-import { LayoutGrid, Users, FileCheck, ShieldAlert, LogOut, BarChart3, ClipboardList } from 'lucide-react';
+import { LayoutGrid, Users, FileCheck, ShieldAlert, LogOut, BarChart3, ClipboardList, Gavel } from 'lucide-react';
 import Logo from '../../Logo';
 
-export type AdminView = 'dashboard' | 'analytics' | 'users' | 'approvals' | 'compliance' | 'audit';
+export type AdminView = 'dashboard' | 'analytics' | 'users' | 'auctions' | 'add-auction' | 'approvals' | 'compliance' | 'audit';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -35,6 +35,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onNavigate, on
         />
         
         <div className="px-4 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Management</div>
+        <NavItem 
+          icon={Gavel} 
+          label="Auctions" 
+          active={currentView === 'auctions' || currentView === 'add-auction'} 
+          onClick={() => onNavigate('auctions')} 
+        />
         <NavItem 
           icon={Users} 
           label="Users" 
