@@ -11,41 +11,7 @@ const INITIAL_USER = {
   avatar: ''
 };
 
-const INITIAL_AUCTIONS: any[] = [
-    {
-        id: 101,
-        title: 'Industrial Grade Copper Wire Scrap',
-        category: 'Metal',
-        quantity: '500 kg',
-        location: 'Mumbai, MH',
-        currentBid: 45000,
-        basePrice: 40000,
-        endsIn: 120, // minutes
-        image: 'from-orange-400 to-red-500'
-    },
-    {
-        id: 102,
-        title: 'Bulk PET Bottles (Washed)',
-        category: 'Plastic',
-        quantity: '2 Tons',
-        location: 'Pune, MH',
-        currentBid: 12000,
-        basePrice: 10000,
-        endsIn: 45, // minutes
-        image: 'from-blue-400 to-cyan-500'
-    },
-    {
-        id: 103,
-        title: 'E-Waste: Old Circuit Boards',
-        category: 'E-Waste',
-        quantity: '150 kg',
-        location: 'Bangalore, KA',
-        currentBid: 85000,
-        basePrice: 80000,
-        endsIn: 240, // minutes
-        image: 'from-emerald-400 to-teal-500'
-    }
-];
+const INITIAL_AUCTIONS: any[] = [];
 const INITIAL_BIDS: any[] = [];
 const INITIAL_TRANSACTIONS: any[] = [];
 const INITIAL_NOTIFICATIONS: any[] = [];

@@ -13,6 +13,7 @@ import MyBids from './MyBids';
 import UserWallet from './Wallet';
 import UserSettings from './Settings';
 import MaterialExchange from './MaterialExchange';
+import CartDrawer from './CartDrawer';
 
 type ViewState = 'dashboard' | 'my-bids' | 'auctions' | 'wallet' | 'settings' | 'exchange';
 
@@ -31,6 +32,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
   const [transactions, setTransactions] = useState(UserService.getTransactions());
   const [notifications, setNotifications] = useState(UserService.getNotifications());
   
+  // Cart State
+  const [cart, setCart] = useState<any[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
   // Shared UI State
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -59,21 +64,65 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
       setNotifications(UserService.getNotifications());
   };
 
+  // Cart Functions
+  const addToCart = (product: any, quantity: number) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
+      }
+      return [...prev, { ...product, quantity }];
+    });
+    // Optional: open cart immediately to show feedback
+    // setIsCartOpen(true); 
+  };
+
+  const updateCartQuantity = (id: number, delta: number) => {
+    setCart(prev => prev.map(item => {
+       if (item.id === id) {
+          const newQty = Math.max(1, item.quantity + delta);
+          return { ...item, quantity: newQty };
+       }
+       return item;
+    }));
+  };
+
+  const removeFromCart = (id: number) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleCheckout = () => {
+     showToast('success', 'Order placed successfully! We will contact you for delivery.');
+     setCart([]);
+     setIsCartOpen(false);
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
   const availableBalance = user.walletBalance - user.emdBlocked;
+  const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-sans text-gray-800">
       
       {/* Toast Notification */}
       {toastMessage && (
-          <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-2xl animate-fade-in-up flex items-center gap-3 ${
+          <div className={`fixed top-4 right-4 z-[100] px-6 py-3 rounded-xl shadow-2xl animate-fade-in-up flex items-center gap-3 ${
               toastMessage.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-500 text-white'
           }`}>
               {toastMessage.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
               <span className="font-medium">{toastMessage.msg}</span>
           </div>
       )}
+
+      {/* Cart Drawer */}
+      <CartDrawer 
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cart}
+        onUpdateQuantity={updateCartQuantity}
+        onRemove={removeFromCart}
+        onCheckout={handleCheckout}
+      />
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
@@ -142,6 +191,22 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
           </div>
 
           <div className="flex items-center gap-3 md:gap-6">
+            
+            {/* Cart Icon */}
+            <button 
+                onClick={() => setIsCartOpen(true)}
+                className="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+                title="View Cart"
+            >
+                <ShoppingBag size={24} />
+                {cartItemCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-eco-green rounded-full border-2 border-white shadow-sm animate-fade-in">
+                        {cartItemCount}
+                    </span>
+                )}
+            </button>
+
+            {/* Notification Icon */}
             <div className="relative">
                 <button 
                     onClick={() => setShowNotifications(!showNotifications)}
@@ -240,7 +305,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
                 )}
 
                 {currentView === 'exchange' && (
-                    <MaterialExchange showToast={showToast} />
+                    <MaterialExchange 
+                        showToast={showToast} 
+                        addToCart={addToCart}
+                    />
                 )}
 
                 {currentView === 'my-bids' && (

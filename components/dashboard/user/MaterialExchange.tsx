@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Tag, X, CheckCircle2, Image as ImageIcon, Search, Filter, CreditCard, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, Plus, Tag, X, CheckCircle2, Image as ImageIcon, Search, Filter, CreditCard, ShoppingCart, Minus, Upload } from 'lucide-react';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 
@@ -13,55 +13,19 @@ interface Product {
   isGradient: boolean;
 }
 
-const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    title: 'Recycled Plastic Pellets (HDPE)',
-    price: 4500,
-    description: 'High-quality recycled HDPE pellets suitable for injection molding. Washed and dried. Sourced from post-consumer waste.',
-    category: 'Plastic',
-    isGradient: true,
-    image: 'from-blue-400 to-cyan-300'
-  },
-  {
-    id: 2,
-    title: 'Crushed Glass Cullet - Clear',
-    price: 1200,
-    description: 'Furnace-ready clear glass cullet. Free from ceramics and metals. Ideal for glass container manufacturing.',
-    category: 'Glass',
-    isGradient: true,
-    image: 'from-emerald-300 to-teal-200'
-  },
-  {
-    id: 3,
-    title: 'Cardboard Bales (OCC)',
-    price: 8500,
-    description: 'Old Corrugated Containers (OCC) grade 11. Baled and wire-tied. Moisture content < 12%.',
-    category: 'Paper',
-    isGradient: true,
-    image: 'from-amber-200 to-orange-100'
-  },
-  {
-    id: 4,
-    title: 'Aluminum Cans (Pressed)',
-    price: 95000,
-    description: 'Compressed aluminum beverage cans. Minimal contamination. Ready for smelting.',
-    category: 'Metal',
-    isGradient: true,
-    image: 'from-slate-300 to-gray-400'
-  }
-];
+const INITIAL_PRODUCTS: Product[] = [];
 
 interface MaterialExchangeProps {
   showToast: (type: 'success' | 'error', msg: string) => void;
+  addToCart: (product: Product, quantity: number) => void;
 }
 
-const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
+const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast, addToCart }) => {
   const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [cartCount, setCartCount] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   
   // Sell Form State
   const [sellForm, setSellForm] = useState({
@@ -97,15 +61,37 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
     setMode('buy');
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSellForm(prev => ({ ...prev, imageUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const openProductModal = (product: Product) => {
+      setSelectedProduct(product);
+      setQuantity(1);
+  };
+
   const handleAddToCart = () => {
-    setCartCount(prev => prev + 1);
-    showToast('success', 'Item added to cart!');
-    setSelectedProduct(null);
+    if (selectedProduct) {
+        addToCart(selectedProduct, quantity);
+        showToast('success', `${quantity} item${quantity > 1 ? 's' : ''} added to cart!`);
+        setSelectedProduct(null);
+    }
   };
 
   const handleBuyNow = () => {
-    showToast('success', 'Purchase successful! Order #' + Math.floor(Math.random() * 10000));
-    setSelectedProduct(null);
+    if (selectedProduct) {
+        addToCart(selectedProduct, quantity);
+        showToast('success', 'Added to cart. Proceeding to checkout...');
+        // In a real app, this would route to checkout immediately
+        setSelectedProduct(null);
+    }
   };
 
   const filteredProducts = products.filter(p => 
@@ -123,20 +109,22 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
               <h2 className="text-2xl font-bold text-gray-900">Material Exchange</h2>
               <p className="text-gray-500 text-sm">Buy and sell recyclable materials directly.</p>
             </div>
-            {cartCount > 0 && (
-                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-eco-green/10 text-eco-green rounded-full animate-fade-in">
-                    <ShoppingCart size={18} />
-                    <span className="font-bold text-sm">{cartCount} items</span>
-                 </div>
-             )}
         </div>
 
-        <div className="bg-gray-100 p-1.5 rounded-xl flex items-center relative">
+        {/* Animated Toggle Switch */}
+        <div className="bg-gray-100 p-1.5 rounded-xl flex items-center relative w-full md:w-64 isolate">
+          {/* Sliding Background */}
+          <div 
+            className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] z-[-1] ${
+                mode === 'buy' ? 'left-1.5' : 'left-[calc(50%+1.5px)]'
+            }`}
+          ></div>
+          
           <button
             onClick={() => setMode('buy')}
-            className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 flex items-center justify-center gap-2 relative z-10 ${
               mode === 'buy' 
-                ? 'bg-white text-eco-darkGreen shadow-md' 
+                ? 'text-eco-darkGreen' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -144,9 +132,9 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
           </button>
           <button
             onClick={() => setMode('sell')}
-            className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 flex items-center justify-center gap-2 relative z-10 ${
               mode === 'sell' 
-                ? 'bg-white text-blue-600 shadow-md' 
+                ? 'text-blue-600' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -176,7 +164,7 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
             {filteredProducts.map((product) => (
               <div 
                 key={product.id}
-                onClick={() => setSelectedProduct(product)}
+                onClick={() => openProductModal(product)}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
               >
                 {/* Product Image */}
@@ -203,6 +191,17 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
               </div>
             ))}
           </div>
+          
+          {filteredProducts.length === 0 && (
+             <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShoppingBag size={24} className="text-gray-400" />
+                 </div>
+                 <h3 className="text-lg font-bold text-gray-600">No items found</h3>
+                 <p className="text-gray-500">Be the first to list an item for sale!</p>
+                 <button onClick={() => setMode('sell')} className="mt-4 text-eco-green font-bold hover:underline">List Item</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -262,12 +261,41 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
                         />
                     </div>
 
-                    <Input 
-                        label="Image URL (Optional)"
-                        placeholder="https://..."
-                        value={sellForm.imageUrl}
-                        onChange={(e) => setSellForm({...sellForm, imageUrl: e.target.value})}
-                    />
+                    {/* Image Upload Field */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center min-h-[200px] hover:border-eco-green hover:bg-eco-green/5 transition-all cursor-pointer relative group bg-gray-50">
+                            <input 
+                                type="file" 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                            />
+                            {sellForm.imageUrl ? (
+                                <div className="relative w-full h-full flex justify-center">
+                                    <img src={sellForm.imageUrl} alt="Preview" className="h-48 object-contain rounded-lg" />
+                                     <button 
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault(); 
+                                            setSellForm({...sellForm, imageUrl: ''});
+                                        }}
+                                        className="absolute top-0 right-0 p-1.5 bg-white rounded-full shadow-md z-20 hover:bg-red-50 text-red-500 border border-gray-100"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-400 group-hover:text-eco-green group-hover:shadow-md transition-all mb-3 shadow-sm border border-gray-100">
+                                        <Upload size={24} />
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-600">Click to upload image</p>
+                                    <p className="text-xs text-gray-400 mt-1">SVG, PNG, JPG (max. 5MB)</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
 
                     <div className="pt-4">
                         <Button type="submit" className="bg-blue-600 hover:bg-blue-700 shadow-blue-200">
@@ -295,7 +323,7 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
                     )}
                     <button 
                         onClick={() => setSelectedProduct(null)}
-                        className="absolute top-4 right-4 p-2 bg-black/20 text-white hover:bg-black/40 rounded-full transition-colors"
+                        className="absolute top-4 right-4 p-2 bg-black/20 text-white hover:bg-black/40 rounded-full transition-colors backdrop-blur-sm"
                     >
                         <X size={20} />
                     </button>
@@ -306,13 +334,37 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast }) => {
                     </div>
                 </div>
                 
-                <div className="p-8">
+                <div className="p-6 md:p-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedProduct.title}</h2>
-                    <h3 className="text-3xl font-bold text-eco-green mb-6">₹{selectedProduct.price.toLocaleString()}</h3>
+                    <h3 className="text-3xl font-bold text-eco-green mb-6">₹{selectedProduct.price.toLocaleString()} <span className="text-sm text-gray-400 font-normal">/ unit</span></h3>
                     
-                    <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+                    <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100 max-h-32 overflow-y-auto custom-scrollbar">
                         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description</h4>
                         <p className="text-gray-700 leading-relaxed text-sm">{selectedProduct.description}</p>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
+                         <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+                            <button 
+                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                className="p-2 hover:bg-gray-50 rounded-md transition-colors text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                disabled={quantity <= 1}
+                            >
+                                <Minus size={16} />
+                            </button>
+                            <span className="w-12 text-center font-bold text-gray-900 select-none">{quantity}</span>
+                            <button 
+                                onClick={() => setQuantity(quantity + 1)}
+                                className="p-2 hover:bg-gray-50 rounded-md transition-colors text-gray-600"
+                            >
+                                <Plus size={16} />
+                            </button>
+                         </div>
+                         <div className="text-right flex-1">
+                             <p className="text-xs text-gray-500 font-medium">Total Price</p>
+                             <p className="text-xl font-bold text-gray-900 animate-fade-in">₹{(selectedProduct.price * quantity).toLocaleString()}</p>
+                         </div>
                     </div>
 
                     <div className="flex gap-3">
