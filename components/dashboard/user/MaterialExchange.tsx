@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Tag, X, CheckCircle2, Image as ImageIcon, Search, Filter, CreditCard, ShoppingCart, Minus, Upload } from 'lucide-react';
+import { ShoppingBag, Plus, Tag, X, CheckCircle2, Image as ImageIcon, Search, Filter, CreditCard, ShoppingCart, Minus, Upload, ArrowRight, AlertCircle } from 'lucide-react';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 
@@ -26,6 +26,7 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast, addToCar
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [isDragActive, setIsDragActive] = useState(false);
   
   // Sell Form State
   const [sellForm, setSellForm] = useState({
@@ -61,14 +62,45 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast, addToCar
     setMode('buy');
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+        setIsDragActive(true);
+    } else if (e.type === "dragleave") {
+        setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+        showToast('error', 'Please upload a valid image file (JPG, PNG)');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('error', 'Image size must be less than 5MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
         setSellForm(prev => ({ ...prev, imageUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+        handleFile(e.target.files[0]);
     }
   };
 
@@ -89,7 +121,6 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast, addToCar
     if (selectedProduct) {
         addToCart(selectedProduct, quantity);
         showToast('success', 'Added to cart. Proceeding to checkout...');
-        // In a real app, this would route to checkout immediately
         setSelectedProduct(null);
     }
   };
@@ -264,7 +295,17 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast, addToCar
                     {/* Image Upload Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center min-h-[200px] hover:border-eco-green hover:bg-eco-green/5 transition-all cursor-pointer relative group bg-gray-50">
+                        <div 
+                            className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center min-h-[240px] transition-all cursor-pointer relative group ${
+                                isDragActive 
+                                ? 'border-eco-green bg-eco-green/10 scale-[1.02]' 
+                                : 'border-gray-300 bg-gray-50 hover:border-eco-green hover:bg-eco-green/5'
+                            }`}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                        >
                             <input 
                                 type="file" 
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -272,34 +313,43 @@ const MaterialExchange: React.FC<MaterialExchangeProps> = ({ showToast, addToCar
                                 onChange={handleImageUpload}
                             />
                             {sellForm.imageUrl ? (
-                                <div className="relative w-full h-full flex justify-center">
-                                    <img src={sellForm.imageUrl} alt="Preview" className="h-48 object-contain rounded-lg" />
+                                <div className="relative w-full h-full flex justify-center items-center">
+                                    <img src={sellForm.imageUrl} alt="Preview" className="max-h-48 object-contain rounded-lg shadow-sm" />
                                      <button 
                                         type="button"
                                         onClick={(e) => {
                                             e.preventDefault(); 
+                                            e.stopPropagation(); // Stop propagation to prevent file input trigger
                                             setSellForm({...sellForm, imageUrl: ''});
                                         }}
-                                        className="absolute top-0 right-0 p-1.5 bg-white rounded-full shadow-md z-20 hover:bg-red-50 text-red-500 border border-gray-100"
+                                        className="absolute -top-2 -right-2 p-1.5 bg-white rounded-full shadow-md z-20 hover:bg-red-50 text-red-500 border border-gray-200 transition-colors"
                                     >
                                         <X size={16} />
                                     </button>
                                 </div>
                             ) : (
-                                <>
-                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-400 group-hover:text-eco-green group-hover:shadow-md transition-all mb-3 shadow-sm border border-gray-100">
-                                        <Upload size={24} />
+                                <div className="flex flex-col items-center justify-center text-center pointer-events-none">
+                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all shadow-sm border border-gray-100 ${
+                                        isDragActive ? 'bg-white text-eco-green scale-110' : 'bg-white text-gray-400 group-hover:text-eco-green'
+                                    }`}>
+                                        <Upload size={28} />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-600">Click to upload image</p>
-                                    <p className="text-xs text-gray-400 mt-1">SVG, PNG, JPG (max. 5MB)</p>
-                                </>
+                                    <p className={`text-sm font-bold mb-1 transition-colors ${isDragActive ? 'text-eco-green' : 'text-gray-700'}`}>
+                                        {isDragActive ? 'Drop image here' : 'Click or drag image to upload'}
+                                    </p>
+                                    <p className="text-xs text-gray-400">SVG, PNG, JPG (max. 5MB)</p>
+                                </div>
                             )}
                         </div>
                     </div>
 
-                    <div className="pt-4">
-                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 shadow-blue-200">
-                            List Item for Sale
+                    <div className="pt-4 mt-6">
+                        <Button 
+                            type="submit" 
+                            className="w-full py-4 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-200 flex items-center justify-center gap-2 transition-all hover:-translate-y-1"
+                        >
+                            <Tag size={20} />
+                            List Item
                         </Button>
                     </div>
                 </form>
