@@ -5,37 +5,131 @@ import { Bid, Auction } from './types';
 export const UserService = {
 
     async getBids() {
-        // In a real app, join bids with auctions
-        // For now, return mock or try to fetch if table exists
-        // We will simulate data for demonstration if DB is empty
-        return [
-            { id: 1, auctionTitle: 'Bulk Copper Scrap', bidAmount: 45000, date: '2023-10-15', status: 'Leading' },
-            { id: 2, auctionTitle: 'Plastic Pellets', bidAmount: 12000, date: '2023-10-12', status: 'Outbid' },
-            { id: 3, auctionTitle: 'E-Waste Lot #44', bidAmount: 8500, date: '2023-10-01', status: 'Won' },
-        ];
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data, error } = await supabase
+            .from('bids')
+            .select(`
+                id,
+                amount,
+                status,
+                created_at,
+                auctions ( title )
+            `)
+            .eq('bidder_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error(error);
+            return [];
+        }
+
+        return data.map((item: any) => ({
+            id: item.id,
+            auctionTitle: item.auctions?.title || 'Unknown Auction',
+            bidAmount: item.amount,
+            date: new Date(item.created_at).toLocaleDateString(),
+            status: item.status
+        }));
     },
 
     async getTransactions() {
-        return [
-            { id: 'TXN-8821', desc: 'Wallet Deposit', amount: 50000, date: '2023-10-10', type: 'Credit', status: 'Success' },
-            { id: 'TXN-8822', desc: 'EMD Block - Auction #12', amount: 2500, date: '2023-10-15', type: 'Debit', status: 'Hold' },
-        ];
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error(error);
+            return [];
+        }
+
+        return data.map((item: any) => ({
+            id: item.id,
+            desc: item.description,
+            amount: item.amount,
+            date: new Date(item.created_at).toLocaleDateString(),
+            type: item.type,
+            status: item.status
+        }));
     },
 
     async getNotifications() {
-        return [
-            { id: 1, title: 'Bid Outbid', message: 'You have been outbid on Plastic Pellets.', time: '2 mins ago', read: false, type: 'warning' },
-            { id: 2, title: 'Auction Won', message: 'Congratulations! You won E-Waste Lot #44.', time: '1 day ago', read: false, type: 'success' },
-        ];
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error(error);
+            return [];
+        }
+
+        return data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            message: item.message,
+            time: new Date(item.created_at).toLocaleDateString(), // Simplification
+            read: item.is_read,
+            type: item.type
+        }));
     },
 
     async markNotificationsRead() {
-        // No-op for demo
-        return true;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', user.id);
+
+        return !error;
     },
 
     async addFunds(amount: number) {
-        // Simulate adding funds
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
+
+        // 1. Create Transaction
+        const { error: txnError } = await supabase
+            .from('transactions')
+            .insert({
+                user_id: user.id,
+                type: 'Credit',
+                amount: amount,
+                description: 'Wallet Deposit',
+                status: 'Success'
+            });
+
+        if (txnError) throw txnError;
+
+        // 2. Update Profile Balance (RPC or direct update)
+        // Ideally use an RPC for atomicity, but direct update for now:
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('wallet_balance')
+            .eq('id', user.id)
+            .single();
+
+        const newBalance = (profile?.wallet_balance || 0) + amount;
+
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ wallet_balance: newBalance })
+            .eq('id', user.id);
+
+        if (profileError) throw profileError;
+
         return true;
     },
 

@@ -11,9 +11,6 @@ const MyListings: React.FC<MyListingsProps> = ({ showToast }) => {
     const [listings, setListings] = useState<MarketplaceItem[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Refactor this to use a real user ID in the future
-    const MOCK_USER_ID = "user-123";
-
     useEffect(() => {
         loadListings();
     }, []);
@@ -21,12 +18,15 @@ const MyListings: React.FC<MyListingsProps> = ({ showToast }) => {
     const loadListings = async () => {
         setLoading(true);
         try {
-            // ideally MarketplaceService.getUserItems(userId)
-            // For now we filter locally or assuming getItems returns all
-            const allItems = await MarketplaceService.getItems();
-            // Filter logic would go here if API returned everyone's items
-            // For demo purposes, we might just show all or filter by a mock ID if the item has one
-            setListings(allItems);
+            const { data: { user } } = await import('../../lib/supabaseClient').then(m => m.supabase.auth.getUser());
+
+            if (user) {
+                // Fetch all and filter by seller_id (since we haven't implemented getUserItems in service yet)
+                // Or better, let's just assume getItems returns all and we filter
+                const allItems = await MarketplaceService.getItems();
+                const myItems = allItems.filter(item => item.sellerId === user.id);
+                setListings(myItems);
+            }
         } catch (error) {
             console.error("Failed to load listings", error);
             showToast('error', 'Failed to load your listings');

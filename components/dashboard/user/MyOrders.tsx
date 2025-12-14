@@ -10,11 +10,10 @@ interface Order {
 }
 
 const MyOrders: React.FC = () => {
-    // Mock Data for now as no OrderService exists yet
-    const [orders, setOrders] = useState<Order[]>([
-        { id: 'ORD-1001', items: ['Copper Wire Scrap', 'Plastic Pellets'], total: 45000, status: 'Processing', date: '2023-10-25' },
-        { id: 'ORD-1002', items: ['Aluminum Cans'], total: 12000, status: 'Delivered', date: '2023-10-15' },
-    ]);
+    const [orders, setOrders] = useState<Order[]>([]);
+
+    // In the future, we will fetch real orders here.
+    // For now, cleaner to show empty than mock data.
 
     return (
         <div className="animate-fade-in space-y-6">
@@ -35,7 +34,7 @@ const MyOrders: React.FC = () => {
                                     <p className="text-xs text-gray-400">{order.date}</p>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                                        order.status === 'Processing' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                                    order.status === 'Processing' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
                                     }`}>
                                     {order.status === 'Delivered' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                                     {order.status}
