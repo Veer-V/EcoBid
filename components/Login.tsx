@@ -72,16 +72,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateToRegister, onNavigateToForgotP
             Join the world's most transparent and sustainable waste bidding platform. Connect with authorized recyclers and ensure 100% traceability.
           </p>
 
-          <div className="flex gap-4">
-            <div className="p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
-              <p className="text-2xl font-bold">12k+</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Active Users</p>
-            </div>
-            <div className="p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
-              <p className="text-2xl font-bold">₹40Cr</p>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Traded Value</p>
-            </div>
-          </div>
+
         </div>
       </div>
 

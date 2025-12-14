@@ -6,6 +6,7 @@ import { AuditService, AuditLogEntry } from '../../../utils/audit';
 import { AuthService } from '../../services/AuthService';
 import { AuctionService } from '../../services/AuctionService';
 import AddAuction from './AddAuction';
+import MarketplaceManagement from './MarketplaceManagement';
 import { Search, Download, Filter, Power, Eye, Shield, MapPin, ChevronDown, X, CheckSquare, UserCheck, UserX, Menu, Calendar, Trash2, Mail, Phone, ChevronUp, Check, FileText, ChevronLeft, ChevronRight, AlertTriangle, Info, Plus, Gavel, Clock, Pencil } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -395,6 +396,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             }}
                             editData={auctionToEdit}
                         />
+                    )}
+
+                    {currentView === 'marketplace' && (
+                        <MarketplaceManagement />
                     )}
 
                     {currentView === 'auctions' && (

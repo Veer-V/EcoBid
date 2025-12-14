@@ -84,7 +84,10 @@ export const MarketplaceService = {
             .delete()
             .eq('id', id);
 
-        if (error) throw error;
+        if (error) {
+            console.error("Delete Item Error:", error);
+            throw error;
+        }
         return true;
     }
 };

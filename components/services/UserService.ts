@@ -39,5 +39,35 @@ export const UserService = {
         return true;
     },
 
+    async placeBid(auctionId: number, amount: number) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Please log in to place a bid");
+
+        // 1. Check wallet balance
+        // 2. Block EMD
+        // 3. Insert bid to 'bids' table
+        // 4. Update auction 'current_bid'
+
+        // Simplified for this step:
+        const { error } = await supabase
+            .from('bids')
+            .insert({
+                auction_id: auctionId,
+                bidder_id: user.id,
+                amount: amount,
+                status: 'placed'
+            });
+
+        if (error) throw error;
+
+        // Update auction current bid (should ideally be trigger or transaction)
+        await supabase
+            .from('auctions')
+            .update({ current_bid: amount })
+            .eq('id', auctionId);
+
+        return true;
+    },
+
     // Mapping helper if needed, but we try to use AuthService
 };

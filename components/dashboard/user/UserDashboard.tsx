@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Gavel, Wallet, Settings as SettingsIcon, Bell, LogOut,
-  Menu, X, Plus, AlertCircle, CheckCircle2, Info, ShoppingBag
+  Menu, X, Plus, AlertCircle, CheckCircle2, Info, ShoppingBag, Package
 } from 'lucide-react';
 import Logo from '../../Logo';
 import { AuthService } from '../../services/AuthService';
@@ -16,8 +16,10 @@ import UserWallet from './Wallet';
 import UserSettings from './Settings';
 import MaterialExchange from './MaterialExchange';
 import CartDrawer from './CartDrawer';
+import MyListings from './MyListings';
+import MyOrders from './MyOrders';
 
-type ViewState = 'dashboard' | 'my-bids' | 'auctions' | 'wallet' | 'settings' | 'exchange';
+type ViewState = 'dashboard' | 'my-bids' | 'auctions' | 'wallet' | 'settings' | 'exchange' | 'my-listings' | 'my-orders';
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -170,6 +172,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
           <NavItem icon={Gavel} label="My Bids" badge={bids.filter(b => b.status === 'Leading').length.toString()} active={currentView === 'my-bids'} onClick={() => { setCurrentView('my-bids'); setSidebarOpen(false); }} />
           <NavItem icon={SettingsIcon} label="Live Auctions" active={currentView === 'auctions'} onClick={() => { setCurrentView('auctions'); setSidebarOpen(false); }} />
           <NavItem icon={ShoppingBag} label="Material Exchange" active={currentView === 'exchange'} onClick={() => { setCurrentView('exchange'); setSidebarOpen(false); }} />
+          <NavItem icon={Package} label="My Listings" active={currentView === 'my-listings'} onClick={() => { setCurrentView('my-listings'); setSidebarOpen(false); }} />
+          <NavItem icon={CheckCircle2} label="My Orders" active={currentView === 'my-orders'} onClick={() => { setCurrentView('my-orders'); setSidebarOpen(false); }} />
           <NavItem icon={Wallet} label="Wallet & EMD" active={currentView === 'wallet'} onClick={() => { setCurrentView('wallet'); setSidebarOpen(false); }} />
           <NavItem icon={SettingsIcon} label="Settings" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setSidebarOpen(false); }} />
         </nav>
@@ -327,6 +331,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onLogout }) => {
                 showToast={showToast}
                 addToCart={addToCart}
               />
+            )}
+
+            {currentView === 'my-listings' && (
+              <MyListings
+                showToast={showToast}
+              />
+            )}
+
+            {currentView === 'my-orders' && (
+              <MyOrders />
             )}
 
             {currentView === 'my-bids' && (

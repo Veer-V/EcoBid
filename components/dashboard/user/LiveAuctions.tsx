@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, MapPin, Clock, Timer, Info, X, Filter } from 'lucide-react';
 import Button from '../../ui/Button';
 import { AuctionService } from '../../services/AuctionService';
+import { UserService } from '../../services/UserService';
 
 interface LiveAuctionsProps {
     auctions: any[];
@@ -36,7 +37,7 @@ const LiveAuctions: React.FC<LiveAuctionsProps> = ({ auctions, onRefresh, showTo
         setIsLoading(true);
 
         try {
-            await AuctionService.placeBid(activeBidModal.id, amount);
+            await UserService.placeBid(activeBidModal.id, amount);
             showToast('success', `Bid of ₹${amount.toLocaleString()} placed successfully!`);
             onRefresh();
             setActiveBidModal(null);
@@ -69,8 +70,8 @@ const LiveAuctions: React.FC<LiveAuctionsProps> = ({ auctions, onRefresh, showTo
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border ${categoryFilter === cat
-                                        ? 'bg-slate-800 text-white border-slate-800 shadow-md transform scale-105'
-                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                    ? 'bg-slate-800 text-white border-slate-800 shadow-md transform scale-105'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 {cat}
@@ -95,16 +96,26 @@ const LiveAuctions: React.FC<LiveAuctionsProps> = ({ auctions, onRefresh, showTo
                     {filteredAuctions.map(auction => (
                         <div key={auction.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full active:scale-[0.99] transform">
                             {/* Card Header */}
-                            <div className={`h-36 bg-gradient-to-r ${auction.image} relative p-6 flex flex-col justify-between`}>
-                                <div className="flex justify-between items-start">
-                                    <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/20">
+                            {/* Card Header */}
+                            <div className={`h-36 relative flex flex-col justify-between p-6 ${auction.image?.startsWith('from-') ? `bg-gradient-to-r ${auction.image}` : 'bg-gray-100'}`}>
+                                {!(auction.image?.startsWith('from-')) && auction.image && (
+                                    <img
+                                        src={auction.image}
+                                        alt={auction.title}
+                                        className="absolute inset-0 w-full h-full object-cover z-0"
+                                    />
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-0"></div>
+
+                                <div className="relative z-10 flex justify-between items-start">
+                                    <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/20 shadow-sm">
                                         {auction.category}
                                     </span>
                                     <span className="bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
                                         <Clock size={12} /> {formatTime(auction.endsIn)}
                                     </span>
                                 </div>
-                                <h3 className="text-white font-bold text-lg leading-tight drop-shadow-md">{auction.title}</h3>
+                                <h3 className="relative z-10 text-white font-bold text-lg leading-tight drop-shadow-md">{auction.title}</h3>
                             </div>
 
                             {/* Card Body */}
@@ -161,7 +172,11 @@ const LiveAuctions: React.FC<LiveAuctionsProps> = ({ auctions, onRefresh, showTo
                         <form onSubmit={(e: any) => { e.preventDefault(); handlePlaceBid(e.target.amount.value); }}>
                             <div className="p-6 max-h-[80vh] overflow-y-auto">
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className={`w-16 h-16 rounded-lg bg-gradient-to-br ${activeBidModal.image} flex-shrink-0`}></div>
+                                    <div className={`w-16 h-16 rounded-lg flex-shrink-0 overflow-hidden ${activeBidModal.image?.startsWith('from-') ? `bg-gradient-to-br ${activeBidModal.image}` : 'bg-gray-100'}`}>
+                                        {!(activeBidModal.image?.startsWith('from-')) && activeBidModal.image && (
+                                            <img src={activeBidModal.image} alt={activeBidModal.title} className="w-full h-full object-cover" />
+                                        )}
+                                    </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900">{activeBidModal.title}</h4>
                                         <p className="text-sm text-gray-500">{activeBidModal.quantity} • {activeBidModal.location}</p>
