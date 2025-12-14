@@ -15,7 +15,14 @@ export const UserService = {
                 amount,
                 status,
                 created_at,
-                auctions ( title )
+                auctions ( 
+                    title, 
+                    category, 
+                    quantity,
+                    location,
+                    image_url,
+                    seller_id
+                )
             `)
             .eq('bidder_id', user.id)
             .order('created_at', { ascending: false });
@@ -30,7 +37,8 @@ export const UserService = {
             auctionTitle: item.auctions?.title || 'Unknown Auction',
             bidAmount: item.amount,
             date: new Date(item.created_at).toLocaleDateString(),
-            status: item.status
+            status: item.status,
+            auctions: item.auctions // Pass full object for reports
         }));
     },
 
