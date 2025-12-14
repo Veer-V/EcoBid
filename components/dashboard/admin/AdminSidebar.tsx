@@ -56,7 +56,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onNavigate, on
         <NavItem
           icon={FileCheck}
           label="Approvals"
-          badge="5"
           active={currentView === 'approvals'}
           onClick={() => onNavigate('approvals')}
         />

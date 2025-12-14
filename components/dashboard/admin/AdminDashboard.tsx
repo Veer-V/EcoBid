@@ -349,8 +349,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                                 <KpiCard label="Total Users" value={usersList.length.toString()} change="Real-time" color="bg-blue-500" />
                                 <KpiCard label="Active Auctions" value={auctionsList.length.toString()} change="Active" color="bg-eco-green" />
-                                <KpiCard label="Pending Approvals" value="0" change="All cleared" color="bg-orange-500" />
-                                <KpiCard label="Total Revenue" value="₹ 0" change="No data" color="bg-purple-600" />
+                                <KpiCard label="Pending Approvals" value={usersList.filter(u => u.status === 'pending').length.toString()} change="Awaiting Action" color="bg-orange-500" />
+                                <KpiCard label="Total Revenue" value="₹ 0" change="E-Waste Sales" color="bg-purple-600" />
                             </div>
 
                             {/* Recent Registrations Table - Responsive Headers */}
